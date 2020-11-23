@@ -4,6 +4,10 @@ import os
 
 
 def download_from_kaggle(comp_name, print_bash_output=False):
+  '''
+  Works only on Colab
+  Download data from kaggle
+  '''
   if 'COLAB_GPU' in os.environ:
     files = os.listdir()
     if 'kaggle.json' not in files:
