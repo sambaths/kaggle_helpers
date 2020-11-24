@@ -1,36 +1,56 @@
 
 import subprocess
 import os
+from time import time
+import functools
 
+def timer(function):
+  '''
+  function to time other functions
+  '''
+  @functools.wraps(function)
+  def wrapper(*args, **kwargs):
+    start = time()
+    function(*args, **kwargs)
+    end = time()
+    print('Function ran in ', round((end-start)/60, 2),'minutes.')
+  return wrapper
 
-def download_from_kaggle(comp_name, print_bash_output=False):
+@timer
+def download_from_kaggle(comp_name, download_folder='input',print_bash_output=False):
   '''
-  Works only on Colab
-  Download data from kaggle
+  Use Kaggle API to download data from kaggle to specified folder
+  Works only on Google Colab
+  Download data from kaggle provide kaggle.json folder is already present in the working directory
+  Works only in Linux based machines.
+  Arguments:
+  comp_name: Name of competition as in the kaggle-api command
+  download_folder (optional): download location 
+  print_bash_out (optional) : print output from bash command, default=False
+
   '''
+  cwd = os.getcwd()
+  cwd_files = os.listdir(cwd)
   if 'COLAB_GPU' in os.environ:
-    files = os.listdir()
-    if 'kaggle.json' not in files:
+    if 'kaggle.json' not in cwd_files:
         print('Please upload your kaggle.json file to connect with Kaggle API !!')
         from google.colab import files
         files.upload()
-    try:
-        files = os.listdir('input/')
-    except:
-        files=[]
-    if 'train.csv' not in files:
-        bashCmds = ["pip uninstall -y kaggle", "pip install --upgrade pip", "pip install -q kaggle==1.5.6", "mkdir -p ~/.kaggle","cp kaggle.json ~/.kaggle/", "chmod 600 ~/.kaggle/kaggle.json",
-        "mkdir input", "kaggle competitions download -c comp_name", "sudo unzip -q -n '*.zip' -d 'input/'", "sudo rm *.zip"]
-        for cmd in bashCmds:
-          if 'comp_name' not in cmd:
-            try:
-              process = subprocess.run(cmd,shell=True, check=True, stdout=subprocess.PIPE)
-            except:
-              pass
-          else:
-            cmd = f"kaggle competitions download {comp_name}"
-            process = subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE)
-          if print_bash_output:
-              for out in process.stdout.decode('utf-8').split('\n'):
-                  print(out)
+        cwd_files = os.listdir(cwd)
+  try:
+      files = os.listdir(download_folder)
+  except:
+      files=[]
+  assert 'kaggle.json' in cwd_files, ('Please place kaggle.json file in current working directory')
+  if 'train.csv' not in files:
+      bashCmds = ["pip uninstall -y kaggle", "pip install --upgrade pip", "pip install -q kaggle==1.5.6", "mkdir -p ~/.kaggle","cp kaggle.json ~/.kaggle/", "chmod 600 ~/.kaggle/kaggle.json",
+      "mkdir input", f"kaggle competitions download -c {comp_name}", f"sudo unzip -q -n '*.zip' -d {download_folder}", "sudo rm *.zip"]
+      for cmd in bashCmds:
+        try:
+          process = subprocess.run(cmd,shell=True, check=True, stdout=subprocess.PIPE)
+        except:
+          pass
+        if print_bash_output:
+            for out in process.stdout.decode('utf-8').split('\n'):
+                print(out)
 
