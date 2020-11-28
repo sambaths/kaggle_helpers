@@ -3,6 +3,9 @@ import subprocess
 import os
 from time import time
 import functools
+from sklearn.model_selection import StratifiedKFold
+
+from typing import Int, List, Dict, Optional, Tuple, Any,
 
 def timer(function):
   '''
@@ -13,7 +16,7 @@ def timer(function):
     start = time()
     function(*args, **kwargs)
     end = time()
-    print('Function ran in ', round((end-start)/60, 2),'minutes.')
+    print('Function ran in', round((end-start)/60, 2),'minutes.')
   return wrapper
 
 @timer
@@ -54,3 +57,18 @@ def download_from_kaggle(comp_name, download_folder='input',print_bash_output=Fa
             for out in process.stdout.decode('utf-8').split('\n'):
                 print(out)
 
+@timer
+def create_kfold(df, target_column, n_folds: Optional = 5, save: Optional=False):
+  df.loc[:, 'kfold'] = -1
+  df = df.sample(frac=1).reset_index(drop=True)
+  targets = df[target_column].values
+  skf = StratifiedKFold(n_splits=n_folds)
+
+  for f, (t_idx, v_idx) in enumerate(skf.split(X=df, y=targets)):
+      df.loc[v_idx, 'kfold'] = int(f)
+
+  df['kfold'] = df['kfold'].astype(int)
+  if save:
+    df.to_csv(f'{os.getcwd}/data_with_folds.csv', index=False)
+
+  return df
