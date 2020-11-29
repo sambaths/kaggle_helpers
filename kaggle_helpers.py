@@ -5,7 +5,7 @@ from time import time
 import functools
 from sklearn.model_selection import StratifiedKFold
 
-from typing import Int, List, Dict, Optional, Tuple, Any,
+from typing import List, Dict, Optional, Tuple, Any  
 
 def timer(function):
   '''
